@@ -2,29 +2,23 @@ import matplotlib
 import pandas as pd
 import datetime as dt
 import numpy as np
+import time
 import yfinance as yf
-from scipy.stats import normal
+from scipy.stats import norm
 from matplotlib import pyplot as plt
 
-# years over which to gather data
 years = 10
 
-# set timeframe for measurement, convert years to days
-# day by day resolution required for daily close values
 end_date = dt.datetime.now()
 start_date = end_date - dt.timedelta(days = 365*years)
 
-
-# tickers relate to five large companies at least 10 years since IPO
 tickers = ["SPY", "BND", "GLD", "QQQ", "VTI"]
 
-# creating pandas dataframe for historic close prices
-adj_close_df = pd.DataFrame 
+adj_close_df = pd.DataFrame()
 
-# downloads data on each stock between the start and end date
-# adjusted close prices take into account stcok splits and dividends
 for ticker in tickers:
     data = yf.download(ticker, start = start_date, end = end_date)
-    adj_close_df[ticker] = data["adj close"]
+    adj_close_df[ticker] = data["Close"]
+    time.sleep(1.5)
 
 print(adj_close_df)
