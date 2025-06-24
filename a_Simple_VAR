@@ -7,18 +7,36 @@ import yfinance as yf
 from scipy.stats import norm
 from matplotlib import pyplot as plt
 
+# time over which to take data
 years = 10
+days = 365*years
 
 end_date = dt.datetime.now()
-start_date = end_date - dt.timedelta(days = 365*years)
+start_date = end_date - dt.timedelta(days)
 
+# tickers for five publically traded funds / companies
+# the companies must have had their IPO within the last 10 years
 tickers = ["SPY", "BND", "GLD", "QQQ", "VTI"]
 
 adj_close_df = pd.DataFrame()
 
+# gather data on each tick between the specified dates 
+# gathers close values for each tick, "Close" is the adjusted close value
+# adjusted close value takes into account stcok splits and dividends 
 for ticker in tickers:
     data = yf.download(ticker, start = start_date, end = end_date)
     adj_close_df[ticker] = data["Close"]
     time.sleep(1.5)
 
 print(adj_close_df)
+
+# total value of portfolio
+portfolio_value = 1000000
+
+# assign weighting of each component in the portfolio
+
+# weights = np.array([1/len(tickers)]*len(tickers))
+weight = 1/len(tickers)
+weights = [weight, weight, weight, weight, weight]
+
+print(weights)
