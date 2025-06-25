@@ -24,12 +24,6 @@ adj_close_df = yf.download(tickers, start=start_date, end=end_date)["Close"]
 # gather data on each tick between the specified dates 
 # gathers close values for each tick, "Close" is the adjusted close value
 # adjusted close value takes into account stcok splits and dividends 
-'''
-for ticker in tickers:
-    data = yf.download(ticker, start = start_date, end = end_date)
-    adj_close_df[ticker] = data["Close"]
-    time.sleep(5)
-'''
 
 print(adj_close_df)
 
