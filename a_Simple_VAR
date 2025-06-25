@@ -18,25 +18,65 @@ start_date = end_date - dt.timedelta(days)
 # the companies must have had their IPO within the last 10 years
 tickers = ["SPY", "BND", "GLD", "QQQ", "VTI"]
 
-adj_close_df = pd.DataFrame()
+'''adj_close_df = pd.DataFrame()'''
+adj_close_df = yf.download(tickers, start=start_date, end=end_date)["Close"]
 
 # gather data on each tick between the specified dates 
 # gathers close values for each tick, "Close" is the adjusted close value
 # adjusted close value takes into account stcok splits and dividends 
+'''
 for ticker in tickers:
     data = yf.download(ticker, start = start_date, end = end_date)
     adj_close_df[ticker] = data["Close"]
-    time.sleep(1.5)
+    time.sleep(5)
+'''
 
 print(adj_close_df)
+
+
+# log daily returns using the np.log function, change in close value from previous day 
+# dropping any values which are undefined with the dropna function
+log_returns = np.log(adj_close_df/adj_close_df.shift(1))
+log_returns = log_returns.dropna()
+
+print(log_returns)
 
 # total value of portfolio
 portfolio_value = 1000000
 
 # assign weighting of each component in the portfolio
 
-# weights = np.array([1/len(tickers)]*len(tickers))
-weight = 1/len(tickers)
-weights = [weight, weight, weight, weight, weight]
+weights = np.array([1/len(tickers)] * len(tickers))
+# weight = 1/len(tickers)
+# weights = [weight, weight, weight, weight, weight]
 
 print(weights)
+
+historic_returns = log_returns.dot(weights)
+print(historic_returns.head())
+
+days = 5
+
+range_returns = historic_returns.rolling(window = days).sum()
+range_returns = range_returns.dropna()
+print(range_returns)
+
+# confidence intervals, 95% confidence intervals 
+confidence_level = 0.95
+alpha = 1 - confidence_level  # 0.05
+VaR = -np.percentile(range_returns.values, alpha * 100) * portfolio_value
+
+# plot guassian 
+return_window = days
+range_returns = historic_returns.rolling(window=return_window).sum()
+range_returns = range_returns.dropna()
+
+range_returns_dollar = range_returns * portfolio_value
+
+plt.hist(range_returns_dollar.dropna(), bins=50, density=True)
+plt.xlabel(f'{return_window}-Day Portfolio Return (Dollar Value)')
+plt.ylabel('Frequency')
+plt.title(f'Distribution of Portfolio {return_window}-Day Returns (Dollar Value)')
+plt.axvline(-VaR, color='r', linestyle='dashed', linewidth=2, label=f'VaR at {confidence_level:.0%} confidence level')
+plt.legend()
+plt.show()
