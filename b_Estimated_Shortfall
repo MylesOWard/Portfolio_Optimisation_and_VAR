@@ -27,6 +27,7 @@ adj_close_df = yf.download(tickers, start=start_date, end=end_date, auto_adjust=
 print(adj_close_df)
 
 # ln daily returns using the np.log function, change in close value from previous day 
+# logs are much easier to work with than percentage changes and can be summed over time
 # dropping any values which are undefined with the dropna function
 log_returns = np.log(adj_close_df/adj_close_df.shift(1))
 log_returns = log_returns.dropna()
