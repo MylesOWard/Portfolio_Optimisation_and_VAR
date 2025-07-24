@@ -6,7 +6,7 @@ import datetime as dt
 
 # import data 
 def get_data(stocks, start, end):
-    stockData = yf.download(stocks, start=start, end=end)["Close"]
+    stockData = yf.download(stocks, start = start, end = end, auto_adjust = True)["Close"]
     returns = stockData.pct_change()
     meanReturns = returns.mean()
     # this matrix will be posetive definite or semi definite in every case
