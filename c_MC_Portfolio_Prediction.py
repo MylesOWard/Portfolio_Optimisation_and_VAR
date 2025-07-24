@@ -40,7 +40,7 @@ meanM = np.full(shape=(T, len(weights)), fill_value = meanReturns)
 meanM = meanM.T
 
 portfolio_sims = np.full(shape = (T, sims_number), fill_value = 0.0)
-portfolio_value = 1000000
+portfolio_value = 10000
 
 
 # Monte Carlo loop
