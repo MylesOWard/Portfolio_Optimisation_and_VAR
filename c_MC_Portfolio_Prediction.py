@@ -50,5 +50,11 @@ for m in range(0, sims_number):
     daily_returns = meanM + np.inner(L, Z)
     portfolio_sims[:,m] = np.cumprod(np.inner(weights, daily_returns.T)+1)*portfolio_value
 
+plt.plot(portfolio_sims)
+plt.ylabel("Portfolio Value")
+plt.xlabel("Days")
+plt.title("Projected Portfolio Performance")
+plt.show()
+
 
 
