@@ -42,6 +42,7 @@ meanM = meanM.T
 portfolio_sims = np.full(shape = (T, sims_number), fill_value = 0.0)
 portfolio_value = 10000
 
+final_values = []
 
 # Monte Carlo loop
 for m in range(0, sims_number):
@@ -56,5 +57,11 @@ plt.xlabel("Days")
 plt.title("Projected Portfolio Performance")
 plt.show()
 
+
+# The plot is important but after enough simulations it becomes unreadable
+# We can calculate the expectation value for the portfolio's return seperately 
+
+print("Expectation value is:")
+print(np.mean(final_values))
 
 
