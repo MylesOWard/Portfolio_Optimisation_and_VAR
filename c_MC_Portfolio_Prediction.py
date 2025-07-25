@@ -1,67 +1,66 @@
 import pandas as pd
-import numpy as np 
-import matplotlib.pyplot as plt
-import yfinance as yf
 import datetime as dt
+import numpy as np
+import yfinance as yf
+from matplotlib import pyplot as plt
 
-# import data 
-def get_data(stocks, start, end):
-    stockData = yf.download(stocks, start = start, end = end, auto_adjust = True)["Close"]
-    returns = stockData.pct_change()
-    meanReturns = returns.mean()
-    # this matrix will be posetive definite or semi definite in every case
-    # it will always be symmetric allowing for decomposition
-    covMatrix = returns.cov()
-    return meanReturns, covMatrix
+# Input parameters
+years = 5
+days = 365 * years
+portfolio_value = 1_000_000  # underscores for clarity
 
-# United States company stocks
-# ETFs can also be simulated readily 
-stocklist = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "JPM"]
-stocks = [stock for stock in stocklist]
+tickers = ["SPY", "BND", "GLD", "QQQ", "VTI"]
+weights = np.array([1 / len(tickers)] * len(tickers))
 
-endDate = dt.datetime.now()
-startDate = endDate - dt.timedelta(days=300)
 
-meanReturns, covMatrix = get_data(stocks, startDate, endDate)
-print(meanReturns)
+confidence_level = 0.95      # 5% VaR as before
+alpha = 1 - confidence_level
 
-weights = np.random.random(len(meanReturns))
-weights /= np.sum(weights)
+day_window = 5
 
-print(weights)
+# Dates
+end_date = dt.datetime.now()
+start_date = end_date - dt.timedelta(days)
 
-# mc sims
-# number of simulations 
+# Data
+close = yf.download(tickers, start=start_date, end=end_date, auto_adjust=True)["Close"]
+log_returns = np.log(close / close.shift(1))
+log_returns = log_returns.dropna()
 
-sims_number = 100
-T = 100 # time in days as before 
+# Splitting into 4 years training and 1 year for testing
+# Enables predictions with both methods and a comparison
+split_index = int(len(log_returns) * 4 / 5)
+train_returns = log_returns.iloc[:split_index]
+test_returns = log_returns.iloc[split_index:]
 
-meanM = np.full(shape=(T, len(weights)), fill_value = meanReturns)
-meanM = meanM.T
+# Historical VaR (from test period)
+weighted_returns = log_returns.dot(weights)
+day_window_returns = weighted_returns.rolling(window=day_window).sum()
+day_window_returns = day_window_returns.dropna()
 
-portfolio_sims = np.full(shape = (T, sims_number), fill_value = 0.0)
-portfolio_value = 10000
+dollar_returns = day_window_returns * portfolio_value
+historical_var = -np.percentile(day_window_returns.iloc[split_index:].values, alpha * 100) * portfolio_value
 
-final_values = []
+# Monte Carlo Simulation
+mu = train_returns.mean()
+cov = train_returns.cov()
+num_simulations = 10_000
+num_days = day_window
 
-# Monte Carlo loop
-for m in range(0, sims_number):
-    Z = np.random.normal(size =(T, len(weights)))
-    L = np.linalg.cholesky(covMatrix)
-    daily_returns = meanM + np.inner(L, Z)
-    portfolio_sims[:,m] = np.cumprod(np.inner(weights, daily_returns.T)+1)*portfolio_value
+simulated_paths = np.random.multivariate_normal(mu, cov, size=(num_simulations, num_days))
+simulated_weighted_returns = simulated_paths @ weights
+simulated_total_returns = simulated_weighted_returns.sum(axis=1)
+monte_carlo_var = -np.percentile(simulated_total_returns, alpha * 100) * portfolio_value
 
-plt.plot(portfolio_sims)
-plt.ylabel("Portfolio Value")
-plt.xlabel("Days")
-plt.title("Projected Portfolio Performance")
+# Results
+print(f"Historical VaR (95%) over 5 days: ${historical_var:,.2f}")
+print(f"Monte Carlo VaR (95%) over 5 days: ${monte_carlo_var:,.2f}")
+
+# Plot Monte Carlo simulated distribution
+plt.hist(simulated_total_returns * portfolio_value, bins=100, density=True, alpha=0.7, label='Monte Carlo Simulated')
+plt.axvline(-monte_carlo_var, color='red', linestyle='dashed', label='Monte Carlo VaR')
+plt.xlabel("5-Day Portfolio Returns ($)")
+plt.ylabel("Frequency")
+plt.title("Monte Carlo Simulated 5-Day Portfolio Returns")
+plt.legend()
 plt.show()
-
-
-# The plot is important but after enough simulations it becomes unreadable
-# We can calculate the expectation value for the portfolio's return seperately 
-
-print("Expectation value is:")
-print(np.mean(final_values))
-
-
