@@ -1,0 +1,68 @@
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+import yfinance as yf
+import datetime as dt
+
+# import data 
+def get_data(stocks, start, end):
+    stockData = yf.download(stocks, start = start, end = end, auto_adjust = True)["Close"]
+    returns = stockData.pct_change()
+    meanReturns = returns.mean()
+
+    # this matrix will be posetive definite or semi definite in every case
+    # it will always be symmetric allowing for decomposition
+    covMatrix = returns.cov()
+    return meanReturns, covMatrix
+
+# United States
+stocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "JPM"]
+
+endDate = dt.datetime.now()
+startDate = endDate - dt.timedelta(days=300)
+
+mean_returns, cov_matrix = get_data(stocks, startDate, endDate)
+print(mean_returns)
+
+weights = np.random.random(len(mean_returns))
+weights /= np.sum(weights)
+
+print(weights)
+
+# mc sims
+# number of simulations 
+
+sims_number = 100
+T = 100 # time in days as before 
+
+meanM = np.full(shape=(T, len(weights)), fill_value = mean_returns)
+meanM = meanM.T
+
+portfolio_sims = np.full(shape = (T, sims_number), fill_value = 0.0)
+portfolio_value = 10000
+
+final_values = []
+
+# Monte Carlo loop
+for m in range(0, sims_number):
+    Z = np.random.normal(size =(T, len(weights)))
+    L = np.linalg.cholesky(cov_matrix)
+    daily_returns = meanM + np.inner(L, Z)
+    portfolio_sims[:,m] = np.cumprod(np.inner(weights, daily_returns.T)+1)*portfolio_value
+
+    final_value = portfolio_sims[-1, m]
+    final_values.append(final_value)
+
+
+plt.plot(portfolio_sims)
+plt.ylabel("Portfolio Value")
+plt.xlabel("Days")
+plt.title("Projected Portfolio Performance")
+plt.show()
+
+
+# The plot is important but after enough simulations it becomes unreadable
+# We can calculate the expectation value for the portfolio's return seperately 
+
+print("Expectation value is:")
+print(np.mean(final_values))
