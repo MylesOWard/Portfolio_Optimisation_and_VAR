@@ -33,7 +33,7 @@ split_index = int(len(log_returns) * 4 / 5)
 train_returns = log_returns.iloc[:split_index]
 test_returns = log_returns.iloc[split_index:]
 
-# Historical VaR (from test period)
+# Historic VaR (from test period)
 weighted_returns = log_returns.dot(weights)
 day_window_returns = weighted_returns.rolling(window=day_window).sum()
 day_window_returns = day_window_returns.dropna()
