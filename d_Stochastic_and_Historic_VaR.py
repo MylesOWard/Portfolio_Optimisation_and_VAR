@@ -35,11 +35,13 @@ test_returns = log_returns.iloc[split_index:]
 
 # Historical VaR (from test period)
 weighted_returns = log_returns.dot(weights)
-day_window_returns = weighted_returns.rolling(window=day_window).sum().dropna()
+day_window_returns = weighted_returns.rolling(day_window).sum().dropna()
+split_index = int(len(day_window_returns.dropna()) * 4 / 5)
 dollar_returns = day_window_returns * portfolio_value
 historical_var = -np.percentile(day_window_returns.iloc[split_index:].values, alpha * 100) * portfolio_value
 
 # Monte Carlo Simulation
+np.random.seed(42) # Random Seed Ensures Reproduable Results 
 mu = train_returns.mean()
 cov = train_returns.cov()
 num_simulations = 10_000
