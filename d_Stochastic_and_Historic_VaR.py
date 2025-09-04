@@ -37,8 +37,8 @@ test_returns = log_returns.iloc[split_index:]
 weighted_returns = log_returns.dot(weights)
 day_window_returns = weighted_returns.rolling(day_window).sum().dropna()
 split_index = int(len(day_window_returns.dropna()) * 4 / 5)
-dollar_returns = day_window_returns * portfolio_value
-historical_var = -np.percentile(day_window_returns.iloc[split_index:].values, alpha * 100) * portfolio_value
+hist_pnl = (np.exp(day_window_returns) - 1.0) * portfolio_value
+historical_var = -np.percentile(hist_pnl.iloc[split_index:].values, alpha * 100)
 
 # Monte Carlo Simulation
 np.random.seed(42) # Random Seed Ensures Reproduable Results 
@@ -49,17 +49,21 @@ num_days = day_window
 
 simulated_paths = np.random.multivariate_normal(mu, cov, size=(num_simulations, num_days))
 simulated_weighted_returns = simulated_paths @ weights
-simulated_total_returns = simulated_weighted_returns.sum(axis=1)
-monte_carlo_var = -np.percentile(simulated_total_returns, alpha * 100) * portfolio_value
+
+simulated_total_log = simulated_weighted_returns.sum(axis=1)
+
+# Exact dollar PnL
+simulated_pnl = (np.exp(simulated_total_log) - 1.0) * portfolio_value
+monte_carlo_var = -np.percentile(simulated_pnl, alpha * 100)
 
 # Results
 print(f"Historical VaR (95%) over 5 days: ${historical_var:,.2f}")
 print(f"Monte Carlo VaR (95%) over 5 days: ${monte_carlo_var:,.2f}")
 
 # Plot Monte Carlo simulated distribution
-plt.hist(simulated_total_returns * portfolio_value, bins=100, density=True, alpha=0.7, label='Monte Carlo Simulated')
+plt.hist(simulated_pnl, bins=100, density=True, alpha=0.7, label='Monte Carlo (PnL)')
 plt.axvline(-monte_carlo_var, color='red', linestyle='dashed', label='Monte Carlo VaR')
-plt.xlabel("5-Day Portfolio Returns ($)")
+plt.xlabel("5-Day Portfolio P&L ($)")
 plt.ylabel("Probability Density")
 plt.title("Monte Carlo Simulated 5-Day Portfolio Returns")
 plt.legend()
